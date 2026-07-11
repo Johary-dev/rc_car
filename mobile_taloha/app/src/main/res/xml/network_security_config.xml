@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Autorise HTTP vers le serveur Flask du Raspberry Pi (port 5000, pas de TLS). -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
