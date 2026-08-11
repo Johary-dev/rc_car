@@ -26,13 +26,13 @@
 ## Graphe de dépendances entre commits
 
 ```
-VAGUE 1 — aucune dépendance (Aldo seul, à faire EN PREMIER)
+VAGUE 1 — aucune dépendance (Johary seul, à faire EN PREMIER)
 ─────────────────────────────────────────────────────────────
   C1 (fix package)
   C2 (switchUrl / throttleUrl dans CameraState)
   C3 (NoCamera + battery dans CameraState)
 
-VAGUE 2 — dépend de la vague 1 (Johary + Haroavo en parallèle)
+VAGUE 2 — dépend de la vague 1 (Aldo + Haroavo en parallèle)
 ─────────────────────────────────────────────────────────────
   C4 (fetchStatusTimed)       ← nécessite C3
   C5 (sendSwitch)             ← nécessite C2
@@ -69,11 +69,11 @@ C1 + C2 → C6 → C8 → C11 → C13
 
 | Commit | Auteur | Peut commencer quand ? | Débloque |
 |--------|--------|------------------------|----------|
-| **C1** | Aldo | Immédiatement | C6 |
-| **C2** | Aldo | Immédiatement | C5, C6 |
-| **C3** | Aldo | Immédiatement | C4, C12 |
-| **C4** | Johary | Après merge de **C3** | C9 |
-| **C5** | Johary | Après merge de **C2** | C7 |
+| **C1** | Johary | Immédiatement | C6 |
+| **C2** | Johary | Immédiatement | C5, C6 |
+| **C3** | Johary | Immédiatement | C4, C12 |
+| **C4** | Aldo | Après merge de **C3** | C9 |
+| **C5** | Aldo | Après merge de **C2** | C7 |
 | **C6** | Haroavo | Après merge de **C1** + **C2** | C8 |
 | **C7** | Haroavo | Après merge de **C5** | C10 |
 | **C8** | Tantely | Après merge de **C6** | C11 |
@@ -88,7 +88,7 @@ C1 + C2 → C6 → C8 → C11 → C13
 
 ---
 
-## DEV 1 — Aldo : Fix package + enrichissement de `CameraState.kt`
+## DEV 1 — Johary : Fix package + enrichissement de `CameraState.kt`
 
 ### Commit 1 — `fix: correct wrong package in DirectionRepository`
 > **Prérequis :** aucun — premier commit à envoyer
@@ -111,7 +111,7 @@ C1 + C2 → C6 → C8 → C11 → C13
 
 ### Commit 2 — `feat(state): add switchAutoUrl, switchManualUrl, controlThrottleUrl to CameraConnectionConfig`
 > **Prérequis :** aucun — peut être fait en même temps que C1 et C3
-> **Débloque :** C5 (Johary) + C6 (Haroavo)
+> **Débloque :** C5 (Aldo) + C6 (Haroavo)
 
 **Fichier :** `app/src/main/java/com/tpi/rc_mobile/camera/CameraState.kt`
 
@@ -129,7 +129,7 @@ C1 + C2 → C6 → C8 → C11 → C13
 
 ### Commit 3 — `feat(state): add NoCamera state and battery field to CameraStatus`
 > **Prérequis :** aucun — peut être fait en même temps que C1 et C2
-> **Débloque :** C4 (Johary) + C12 (Iaritina)
+> **Débloque :** C4 (Aldo) + C12 (Iaritina)
 
 **Fichier :** `app/src/main/java/com/tpi/rc_mobile/camera/CameraState.kt`
 
@@ -153,7 +153,7 @@ data class CameraStatus(
 
 ---
 
-## DEV 2 — Johary : Enrichissement de `CameraRepository.kt`
+## DEV 2 — Aldo : Enrichissement de `CameraRepository.kt`
 
 ### Commit 4 — `feat(repo): add fetchStatusTimed for latency measurement`
 > **Prérequis :** attendre le merge de **C3** (le champ `battery` doit exister dans `CameraStatus`)
@@ -821,10 +821,10 @@ private fun ConnectionBar(
 
 | Développeur | Commits | Fichiers modifiés |
 |-------------|---------|-------------------|
-| **Dev 1 — Aldo** | 1, 2, 3 | `DirectionRepository.kt`, `CameraViewModel.kt`, `CameraState.kt` |
-| **Dev 2 — Johary** | 4, 5 | `CameraRepository.kt` |
+| **Dev 1 — Johary** | 1, 2, 3 | `DirectionRepository.kt`, `CameraViewModel.kt`, `CameraState.kt` |
+| **Dev 2 — Aldo** | 4, 5 | `CameraRepository.kt` |
 | **Dev 3 — Haroavo** | 6, 7 | `DirectionRepository.kt`, `CameraViewModel.kt` |
 | **Dev 4 — Tantely** | 8, 9 | `CameraViewModel.kt` |
 | **Dev 5 — Iaritina** | 10, 11, 12, 13 | `CameraScreen.kt` |
 
-> **Ordre recommandé :** Dev 1 en premier (corrige le bug package que tous les autres dépendent de), puis Dev 2 et Dev 3 en parallèle, puis Dev 4 (dépend des commits 6 et 7 pour `sendThrottle`), puis Dev 5 en dernier (dépend de tous les StateFlows ajoutés par Dev 3 et Dev 4).
+> **Ordre recommandé :** Dev 1 (**Johary**) en premier (corrige le bug package que tous les autres dépendent de), puis Dev 2 (**Aldo**) et Dev 3 (**Haroavo**) en parallèle, puis Dev 4 (**Tantely**) (dépend des commits 6 et 7 pour `sendThrottle`), puis Dev 5 (**Iaritina**) en dernier (dépend de tous les StateFlows ajoutés par Dev 3 et Dev 4).
