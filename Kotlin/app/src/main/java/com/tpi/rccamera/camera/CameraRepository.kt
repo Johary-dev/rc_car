@@ -15,6 +15,12 @@ class CameraRepository {
         .readTimeout(5, TimeUnit.SECONDS)
         .build()
 
+    /** Client dédié aux pings périodiques — timeout court pour ne pas bloquer la jauge. */
+    private val pingClient: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(2, TimeUnit.SECONDS)
+        .readTimeout(2, TimeUnit.SECONDS)
+        .build()
+
     suspend fun fetchStatus(config: CameraConnectionConfig): CameraStatus =
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(config.statusUrl).get().build()
@@ -28,9 +34,15 @@ class CameraRepository {
                 val json = JSONObject(body)
 
                 CameraStatus(
-                    resolution = json.optString("resolution").ifBlank { null },
-                    fps = json.optInt("fps", -1).takeIf { it >= 0 },
-                    jpegQuality = json.optInt("jpeg_quality", -1).takeIf { it >= 0 },
+                    resolution      = json.optString("resolution").ifBlank { null },
+                    fps             = json.optInt("fps", -1).takeIf { it >= 0 },
+                    jpegQuality     = json.optInt("jpeg_quality", -1).takeIf { it >= 0 },
+                    cameraConnected = when (json.optString("camera")) {
+                        "connected"    -> true
+                        "disconnected" -> false
+                        else           -> null
+                    },
+                    batteryPercent  = json.optInt("battery", -1).takeIf { it in 0..100 },
                 )
             }
         }
@@ -40,5 +52,43 @@ class CameraRepository {
         onFrame: suspend (ByteArray) -> Unit,
     ) {
         MjpegStreamReader(config.videoUrl).streamFrames(onFrame)
+    }
+
+    /**
+     * Mesure la latence ET lit le statut (batterie, caméra…) en un seul appel.
+     * Retourne null si le serveur ne répond pas dans le délai imparti.
+     */
+    suspend fun fetchStatusTimed(config: CameraConnectionConfig): Pair<Int, CameraStatus>? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val start   = System.currentTimeMillis()
+                val request = Request.Builder().url(config.statusUrl).get().build()
+                val status  = pingClient.newCall(request).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    val json = org.json.JSONObject(body)
+                    CameraStatus(
+                        resolution      = json.optString("resolution").ifBlank { null },
+                        fps             = json.optInt("fps", -1).takeIf { it >= 0 },
+                        jpegQuality     = json.optInt("jpeg_quality", -1).takeIf { it >= 0 },
+                        cameraConnected = when (json.optString("camera")) {
+                            "connected"    -> true
+                            "disconnected" -> false
+                            else           -> null
+                        },
+                        batteryPercent  = json.optInt("battery", -1).takeIf { it in 0..100 },
+                    )
+                }
+                Pair((System.currentTimeMillis() - start).toInt(), status)
+            }.getOrNull()
+        }
+
+    /** Bascule manuel ↔ auto (rc_unified.py : in-process, sans redémarrage). */
+    suspend fun sendSwitch(config: CameraConnectionConfig, toAuto: Boolean) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val url = if (toAuto) config.switchAutoUrl() else config.switchManualUrl()
+                httpClient.newCall(Request.Builder().url(url).get().build()).execute().close()
+            }
+        }
     }
 }

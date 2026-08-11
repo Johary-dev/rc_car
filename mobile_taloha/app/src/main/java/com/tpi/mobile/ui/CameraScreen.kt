@@ -714,8 +714,8 @@ private fun Direction.toIcon(): ImageVector = when (this) {
     Direction.RIGHT -> Icons.AutoMirrored.Filled.KeyboardArrowRight
     Direction.STOP -> Icons.Default.KeyboardArrowUp
 }
-
 private fun TurnSignal.toIcon(): ImageVector = when (this) {
     TurnSignal.LEFT -> Icons.AutoMirrored.Filled.KeyboardArrowLeft
     TurnSignal.RIGHT -> Icons.AutoMirrored.Filled.KeyboardArrowRight
 }
+
